@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, fmt, fmtMoney, typeBadge, badge } from '../utils';
+import { apiFetch, fmt, fmtMoney, badge } from '../utils';
 import { Modal } from '../components/Shared';
 
 export default function Registrations() {
@@ -89,10 +89,7 @@ export default function Registrations() {
                       <div className="text-xs text-slate-500 font-medium mt-0.5">{r.client_phone || 'No phone'}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-700 block mb-1.5">{r.workshop_title}</span>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${typeBadge[r.workshop_type] || typeBadge.other}`}>
-                        {r.workshop_type}
-                      </span>
+                      <span className="font-semibold text-slate-700 block">{r.workshop_title}</span>
                     </td>
                     <td className="px-6 py-4 text-slate-600 font-medium">
                       {fmt(r.workshop_date)}

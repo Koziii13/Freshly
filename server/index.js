@@ -8,6 +8,18 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ type: ['application/json', 'text/plain'] }));
 
+// Health check — pings Supabase to verify cloud connectivity
+app.get('/api/health', async (req, res) => {
+  try {
+    const supabase = require('./db');
+    const { error } = await supabase.from('settings').select('key').limit(1);
+    if (error) throw error;
+    res.json({ status: 'ok', cloud: true });
+  } catch (e) {
+    res.json({ status: 'error', cloud: false, message: e.message });
+  }
+});
+
 // API Routes
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/workshops', require('./routes/workshops'));

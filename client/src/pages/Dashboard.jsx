@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronRight, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { apiFetch, badge, typeBadge, fmtMoney } from '../utils';
+import { apiFetch, badge, fmtMoney } from '../utils';
 
 export default function Dashboard({ setPage }) {
   const [stats, setStats] = useState(null);
@@ -107,16 +107,16 @@ export default function Dashboard({ setPage }) {
         {cards.map((c, i) => (
           <div 
             key={c.label} 
-            className={`rounded-2xl p-6 ring-1 ring-inset ${c.color} flex flex-col gap-2 shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 animate-in slide-up relative overflow-hidden group`}
+            className={`rounded-2xl p-4 ring-1 ring-inset ${c.color} flex flex-col gap-1.5 shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 animate-in slide-up relative overflow-hidden group`}
             style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <span className="text-3xl mb-1 relative z-10">{c.icon}</span>
-            <div className="flex items-baseline gap-2 relative z-10">
-              <span className="text-3xl font-black tracking-tight text-slate-100">{c.value}</span>
+            <span className="text-2xl mb-0.5 relative z-10">{c.icon}</span>
+            <div className="flex items-baseline gap-2 relative z-10 flex-wrap">
+              <span className="text-2xl font-black tracking-tight text-slate-100">{c.value}</span>
               <TrendBadge change={c.change} />
             </div>
-            <span className="text-sm font-semibold text-slate-400 group-hover:text-slate-300 transition-colors uppercase tracking-widest relative z-10">{c.label}</span>
+            <span className="text-xs font-semibold text-slate-400 group-hover:text-slate-300 transition-colors uppercase tracking-widest relative z-10">{c.label}</span>
           </div>
         ))}
       </div>
@@ -157,11 +157,7 @@ export default function Dashboard({ setPage }) {
                   <tr key={i} className="hover:bg-white/[0.03] transition-colors group">
                     <td className="px-8 py-4 font-bold text-slate-200 group-hover:text-white transition-colors">{r.client_name}</td>
                     <td className="px-8 py-4 font-medium text-slate-400">{r.workshop_title}</td>
-                    <td className="px-8 py-4">
-                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${typeBadge[r.workshop_type] || typeBadge.other}`}>
-                        {r.workshop_type}
-                      </span>
-                    </td>
+
                     <td className="px-8 py-4">
                       <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${badge[r.payment_status] || badge.pending}`}>
                         {r.payment_status || 'pending'}

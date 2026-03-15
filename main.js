@@ -9,7 +9,7 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self' http://localhost:3001; script-src 'self' 'unsafe-inline' http://localhost:3001; style-src 'self' 'unsafe-inline' http://localhost:3001; img-src 'self' data: http://localhost:3001; connect-src 'self' http://localhost:3001; font-src 'self' http://localhost:3001 data:"]
+        'Content-Security-Policy': ["default-src 'self' http://localhost:3001; script-src 'self' 'unsafe-inline' http://localhost:3001; style-src 'self' 'unsafe-inline' http://localhost:3001; img-src 'self' data: http://localhost:3001; connect-src 'self' http://localhost:3001 https://*.supabase.co wss://*.supabase.co; font-src 'self' http://localhost:3001 data:"]
       }
     });
   });
@@ -67,6 +67,14 @@ app.whenReady().then(() => {
   };
 
   createWindow();
+
+  // Kill any existing process holding port 3001 before we start our server
+  try {
+    const { execSync } = require('child_process');
+    execSync(`for /f "tokens=5" %a in ('netstat -ano ^| findstr :3001 ^| findstr LISTENING') do taskkill /PID %a /F`, { shell: 'cmd.exe', stdio: 'ignore' });
+  } catch (e) {
+    // Port was already free — no problem
+  }
 
   try {
     process.env.DATA_DIR = app.getPath('userData');

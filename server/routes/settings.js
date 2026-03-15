@@ -3,18 +3,27 @@ const router = express.Router();
 const db = require('../db');
 
 // GET settings (webhook_url)
-router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM settings').all();
-  const settings = {};
-  rows.forEach(r => settings[r.key] = r.value);
-  res.json(settings);
+router.get('/', async (req, res) => {
+  try {
+    const { data: rows, error } = await db.from('settings').select('*');
+    if (error) throw error;
+    
+    const settings = {};
+    if (rows) {
+      rows.forEach(r => settings[r.key] = r.value);
+    }
+    res.json(settings);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST update webhook_url
-router.post('/webhook', (req, res) => {
+router.post('/webhook', async (req, res) => {
   const { url } = req.body;
-  db.prepare('UPDATE settings SET value=? WHERE key=?').run(url || '', 'webhook_url');
-  res.json({ success: true, webhook_url: url });
+  try {
+    const { error } = await db.from('settings').upsert({ key: 'webhook_url', value: url || '' });
+    if (error) throw error;
+    res.json({ success: true, webhook_url: url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST test webhook (runs from Node to bypass client CORS)
 router.post('/test-webhook', async (req, res) => {
@@ -56,6 +65,25 @@ router.post('/test-webhook', async (req, res) => {
   } catch (error) {
     console.error('Test Webhook Error:', error);
     res.status(500).json({ success: false, msg: error.message || 'Failed to ping webhook' });
+  }
+});
+
+// GET database path
+router.get('/db-path', (req, res) => {
+  const configManager = require('../config');
+  const config = configManager.getConfig();
+  res.json({ success: true, dbPath: config.dbPath || '' });
+});
+
+// POST update database path
+router.post('/db-path', (req, res) => {
+  const { dbPath } = req.body;
+  const configManager = require('../config');
+  
+  if (configManager.setConfig({ dbPath: dbPath || '' })) {
+    res.json({ success: true, dbPath: dbPath || '', msg: 'Database path saved successfully. Restart the application to load the new database or see the changes.' });
+  } else {
+    res.status(500).json({ success: false, msg: 'Failed to save database configuration file.' });
   }
 });
 

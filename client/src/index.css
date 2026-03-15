@@ -6,6 +6,9 @@
   body {
     @apply antialiased bg-slate-950 text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200;
   }
+  input, textarea, select {
+    @apply text-slate-900;
+  }
 }
 
 @layer utilities {

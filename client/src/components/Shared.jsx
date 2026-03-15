@@ -52,7 +52,23 @@ export function Sidebar({ page, setPage, onLogout, token }) {
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // App always uses Supabase cloud now — never local
+  const [cloudStatus, setCloudStatus] = useState('checking'); // 'connected' | 'offline' | 'checking'
+
+  useEffect(() => {
+    const checkCloud = async () => {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        setCloudStatus(data.cloud ? 'connected' : 'offline');
+      } catch {
+        setCloudStatus('offline');
+      }
+    };
+    checkCloud();
+    const interval = setInterval(checkCloud, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <aside className="w-64 min-h-screen bg-slate-900/40 backdrop-blur-2xl border-r border-white/5 flex flex-col py-8 px-5 shrink-0 shadow-lg z-10 sticky top-0 h-screen">
@@ -96,12 +112,20 @@ export function Sidebar({ page, setPage, onLogout, token }) {
             Sign Out
           </button>
         )}
-        <div className={`px-4 py-3 rounded-xl border text-xs font-semibold flex items-center gap-2.5 shadow-sm bg-slate-950/50 ${isLocal ? 'border-emerald-500/20 text-emerald-400' : 'border-blue-500/20 text-blue-400'}`}>
-          <span className={`w-2 h-2 rounded-full relative flex`}>
-             {isLocal && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-             <span className={`relative inline-flex rounded-full h-2 w-2 ${isLocal ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`}></span>
-          </span> 
-          {isLocal ? 'Local Offline Mode' : 'Cloud Connected'}
+        <div className={`px-4 py-3 rounded-xl border text-xs font-semibold flex items-center gap-2.5 shadow-sm bg-slate-950/50 ${
+            cloudStatus === 'connected' ? 'border-blue-500/20 text-blue-400' :
+            cloudStatus === 'offline'   ? 'border-red-500/20 text-red-400' :
+                                          'border-slate-500/20 text-slate-400'
+          }`}>
+          <span className="w-2 h-2 rounded-full relative flex">
+            {cloudStatus === 'connected' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>}
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${
+              cloudStatus === 'connected' ? 'bg-blue-500' :
+              cloudStatus === 'offline'   ? 'bg-red-500' :
+                                            'bg-slate-500 animate-pulse'
+            }`}></span>
+          </span>
+          {cloudStatus === 'connected' ? 'Cloud Connected' : cloudStatus === 'offline' ? 'Cloud Offline' : 'Connecting...'}
         </div>
       </div>
     </aside>

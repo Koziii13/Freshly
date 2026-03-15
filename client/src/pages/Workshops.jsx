@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, fmt, fmtMoney, typeBadge } from '../utils';
+import { apiFetch, fmt, fmtMoney } from '../utils';
 import { Modal } from '../components/Shared';
 
 export default function Workshops() {
   const [workshops, setWorkshops] = useState([]);
   const [modal, setModal] = useState(null);
-  const empty = { title: '', type: 'other', date: '', time: '', capacity: 20, price: 0, instructor: '', notes: '' };
+  const empty = { title: '', date: '', time: '', capacity: 20, price: 0, instructor: '', notes: '' };
   const [form, setForm] = useState(empty);
 
   const load = () => apiFetch('/workshops').then(r => r.json()).then(setWorkshops);
@@ -13,7 +13,7 @@ export default function Workshops() {
   useEffect(() => { load(); }, []);
 
   const openAdd = () => { setForm(empty); setModal('add'); };
-  const openEdit = (w) => { setForm({ title: w.title, type: w.type, date: w.date, time: w.time || '', capacity: w.capacity, price: w.price, instructor: w.instructor || '', notes: w.notes || '' }); setModal(w); };
+  const openEdit = (w) => { setForm({ title: w.title, date: w.date, time: w.time || '', capacity: w.capacity, price: w.price, instructor: w.instructor || '', notes: w.notes || '' }); setModal(w); };
 
   const save = async () => {
     if (!form.title.trim()) return alert("Title is required");
@@ -70,12 +70,7 @@ export default function Workshops() {
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-slate-900 leading-tight mb-2">{w.title}</h3>
-                    <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-md ${typeBadge[w.type] || typeBadge.other}`}>
-                      {w.type}
-                    </span>
-                  </div>
+                  <h3 className="font-bold text-lg text-slate-900 leading-tight">{w.title}</h3>
                   
                   {/* Action Menu (Visible on hover on desktop, always on mobile) */}
                   <div className="flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
@@ -132,15 +127,7 @@ export default function Workshops() {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Workshop Title <span className="text-red-500">*</span></label>
               <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full border-0 ring-1 ring-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" placeholder="e.g. Intro to Pottery" />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
-              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="w-full border-0 ring-1 ring-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none cursor-pointer">
-                <option value="other">General / Other</option>
-                <option value="acting">Acting & Theater</option>
-                <option value="painting">Painting & Arts</option>
-                <option value="healing">Healing & Wellness</option>
-              </select>
-            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date <span className="text-red-500">*</span></label>
               <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="w-full border-0 ring-1 ring-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer" />

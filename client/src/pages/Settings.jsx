@@ -3,12 +3,16 @@ import { apiFetch } from '../utils';
 
 export default function Settings() {
   const [url, setUrl] = useState('');
+  const [dbPath, setDbPath] = useState('');
   const [saved, setSaved] = useState(false);
+  const [dbSaved, setDbSaved] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dbLoading, setDbLoading] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
     apiFetch('/settings').then(r => r.json()).then(data => setUrl(data.webhook_url || ''));
+    apiFetch('/settings/db-path').then(r => r.json()).then(data => setDbPath(data.dbPath || ''));
   }, []);
 
   const save = async () => {
@@ -21,6 +25,18 @@ export default function Settings() {
     setLoading(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const saveDbPath = async () => {
+    setDbLoading(true);
+    await apiFetch('/settings/db-path', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ dbPath }) 
+    });
+    setDbLoading(false);
+    setDbSaved(true);
+    setTimeout(() => setDbSaved(false), 2500);
   };
 
   const testConnection = async () => {
@@ -118,6 +134,49 @@ export default function Settings() {
                 {testResult.msg}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl ring-1 ring-slate-200/60 shadow-sm p-8 md:p-10 mt-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl ring-1 ring-purple-100 shadow-sm">
+            ☁️
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 leading-tight">Cloud Database Sync</h3>
+            <p className="text-sm text-slate-500 font-medium">Sync app data across multiple computers using Google Drive or OneDrive</p>
+          </div>
+        </div>
+
+        <div className="pl-0 md:pl-16">
+          <p className="text-[14px] text-slate-600 leading-relaxed mb-6 bg-slate-50/50 p-4 rounded-xl ring-1 ring-slate-100">
+            By default, workshop data is saved locally on this computer. Set a path to a shared cloud drive folder (like Google Drive) to sync your database across machines. <strong>Note: The app must be restarted after changing this path.</strong>
+          </p>
+
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Database Folder Path</label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold p-1">📁</span>
+              <input 
+                value={dbPath} 
+                onChange={e => setDbPath(e.target.value)} 
+                placeholder="C:\Users\Name\Google Drive\Workshop DB" 
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all" 
+              />
+            </div>
+            
+            <button 
+              onClick={saveDbPath} 
+              disabled={dbLoading}
+              className={`sm:w-32 py-3 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center ${
+                dbSaved 
+                  ? 'bg-green-500 text-white hover:bg-green-600 ring-green-600' 
+                  : 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95 shadow-purple-500/20'
+              }`}
+            >
+              {dbLoading ? <span className="animate-spin text-lg block h-5 w-5 border-2 border-white/30 border-t-white rounded-full" /> : dbSaved ? 'Saved ✓' : 'Save Path'}
+            </button>
           </div>
         </div>
       </div>
