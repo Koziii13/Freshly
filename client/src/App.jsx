@@ -61,7 +61,7 @@ export default function App() {
   }[page];
 
   return (
-    <div className="flex h-screen bg-slate-50/50 text-slate-900 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       <Sidebar page={page} setPage={setPage} onLogout={handleLogout} token={token} />
       <main className="flex-1 overflow-y-auto">
         {PageComponent && <PageComponent setPage={setPage} />}

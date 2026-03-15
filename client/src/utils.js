@@ -24,8 +24,8 @@ export async function apiFetch(endpoint, options = {}) {
   return res;
 }
 
-export const badge = { paid: 'bg-green-100 text-green-700 ring-1 ring-green-500/20', pending: 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-500/20', partial: 'bg-orange-100 text-orange-700 ring-1 ring-orange-500/20' };
-export const typeBadge = { acting: 'bg-purple-100 text-purple-700 ring-1 ring-purple-500/20', painting: 'bg-blue-100 text-blue-700 ring-1 ring-blue-500/20', healing: 'bg-teal-100 text-teal-700 ring-1 ring-teal-500/20', other: 'bg-slate-100 text-slate-700 ring-1 ring-slate-500/20' };
+export const badge = { paid: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20', pending: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20', partial: 'bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20' };
+export const typeBadge = { acting: 'bg-purple-500/10 text-purple-400 ring-1 ring-purple-500/20', painting: 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20', healing: 'bg-teal-500/10 text-teal-400 ring-1 ring-teal-500/20', other: 'bg-slate-500/10 text-slate-400 ring-1 ring-slate-500/20' };
 
 export const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '—';
 export const fmtMoney = (n) => `EGP ${Number(n || 0).toLocaleString()}`;

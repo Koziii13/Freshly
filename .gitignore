@@ -9,3 +9,4 @@ workshop.sqlite-shm
 *.log
 build_output.txt
 .DS_Store
+.superpowers/

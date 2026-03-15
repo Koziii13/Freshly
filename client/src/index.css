@@ -4,13 +4,13 @@
 
 @layer base {
   body {
-    @apply antialiased text-slate-800 bg-slate-50/50 selection:bg-blue-100 selection:text-blue-900;
+    @apply antialiased bg-slate-950 text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200;
   }
 }
 
 @layer utilities {
   .animate-in {
-    animation: animate-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: animate-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   .fade-in {
     animation-name: fadeIn;
@@ -19,7 +19,13 @@
     animation-name: slideUp;
   }
   .glass {
-    @apply bg-white/70 backdrop-blur-md border border-white/50 shadow-sm;
+    @apply bg-slate-900/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+  }
+  .glass-panel {
+    @apply bg-slate-950/40 backdrop-blur-3xl border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)];
+  }
+  .glass-card {
+    @apply bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md border border-white/10 shadow-lg;
   }
 }
 
@@ -29,21 +35,21 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Custom scrollbar for a premium feel */
+/* Custom scrollbar for a luxury feel */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
+  @apply bg-slate-800 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-300;
+  @apply bg-slate-700;
 }
