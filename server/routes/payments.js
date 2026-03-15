@@ -12,13 +12,75 @@ router.get('/', (req, res) => {
 
 router.get('/stats/summary', (req, res) => {
   try {
-    const totalClients = db.prepare('SELECT COUNT(*) as count FROM clients').get().count;
-    const totalWorkshops = db.prepare('SELECT COUNT(*) as count FROM workshops').get().count;
-    const upcomingWorkshops = db.prepare("SELECT COUNT(*) as count FROM workshops WHERE date >= date('now')").get().count;
-    const totalRevenue = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status='paid'").get().total;
-    const pendingPayments = db.prepare("SELECT COUNT(*) as count FROM payments WHERE status='pending'").get().count;
-    const recentRegistrations = db.prepare('SELECT r.registered_at, c.name AS client_name, w.title AS workshop_title, w.type AS workshop_type, p.status AS payment_status FROM registrations r JOIN clients c ON r.client_id = c.id JOIN workshops w ON r.workshop_id = w.id LEFT JOIN payments p ON p.registration_id = r.id ORDER BY r.registered_at DESC LIMIT 10').all();
-    res.json({ totalClients, totalWorkshops, upcomingWorkshops, totalRevenue, pendingPayments, recentRegistrations });
+    const { start, end } = req.query;
+    
+    // Helper function to get stats for a specific date range
+    const getStats = (startDate, endDate) => {
+      let conditions = { 
+        created_client: "1=1",
+        created_workshop: "1=1",
+        workshop_date: "date >= date('now')", // default upcoming
+        registered: "1=1",
+        paid: "status='paid'",
+        pending: "status='pending'"
+      };
+
+      if (startDate && endDate) {
+        conditions.created_client = `date(created_at) BETWEEN date('${startDate}') AND date('${endDate}')`;
+        conditions.created_workshop = `date(created_at) BETWEEN date('${startDate}') AND date('${endDate}')`;
+        conditions.workshop_date = `date(date) BETWEEN date('${startDate}') AND date('${endDate}') AND date(date) >= date('now')`;
+        conditions.registered = `date(registered_at) BETWEEN date('${startDate}') AND date('${endDate}')`;
+        conditions.paid += ` AND date(COALESCE(paid_at, (SELECT registered_at FROM registrations WHERE id = registration_id))) BETWEEN date('${startDate}') AND date('${endDate}')`;
+        conditions.pending += ` AND date((SELECT registered_at FROM registrations WHERE id = payments.registration_id)) BETWEEN date('${startDate}') AND date('${endDate}')`;
+      }
+
+      return {
+        totalClients: db.prepare(`SELECT COUNT(*) as count FROM clients WHERE ${conditions.created_client}`).get().count,
+        totalWorkshops: db.prepare(`SELECT COUNT(*) as count FROM workshops WHERE ${conditions.created_workshop}`).get().count,
+        upcomingWorkshops: db.prepare(`SELECT COUNT(*) as count FROM workshops WHERE ${conditions.workshop_date}`).get().count,
+        totalRevenue: db.prepare(`SELECT COALESCE(SUM(amount_paid), 0) + COALESCE(SUM(CASE WHEN amount_paid = 0 THEN amount END), 0) as total FROM payments WHERE ${conditions.paid}`).get().total,
+        pendingPayments: db.prepare(`SELECT COUNT(*) as count FROM payments WHERE ${conditions.pending}`).get().count,
+      };
+    };
+
+    const currentStats = getStats(start, end);
+
+    // Calculate previous period if dates are provided
+    let prevStats = null;
+    if (start && end) {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const dStart = new Date(start);
+      const dEnd = new Date(end);
+      const durationMs = dEnd.getTime() - dStart.getTime();
+      
+      const prevEnd = new Date(dStart.getTime() - msPerDay);
+      const prevStart = new Date(prevEnd.getTime() - durationMs);
+      
+      prevStats = getStats(
+        prevStart.toISOString().split('T')[0],
+        prevEnd.toISOString().split('T')[0]
+      );
+    }
+
+    // Helper to calculate percentage change
+    const calcChange = (curr, prev) => {
+      if (!prevStats) return null; // No comparison available
+      if (prev === 0) return curr > 0 ? 100 : 0; // Avoid infinity
+      return parseFloat((((curr - prev) / prev) * 100).toFixed(1));
+    };
+
+    const stats = {
+      totalClients: { value: currentStats.totalClients, change: calcChange(currentStats.totalClients, prevStats?.totalClients) },
+      totalWorkshops: { value: currentStats.totalWorkshops, change: calcChange(currentStats.totalWorkshops, prevStats?.totalWorkshops) },
+      upcomingWorkshops: { value: currentStats.upcomingWorkshops, change: calcChange(currentStats.upcomingWorkshops, prevStats?.upcomingWorkshops) },
+      totalRevenue: { value: currentStats.totalRevenue, change: calcChange(currentStats.totalRevenue, prevStats?.totalRevenue) },
+      pendingPayments: { value: currentStats.pendingPayments, change: calcChange(currentStats.pendingPayments, prevStats?.pendingPayments) },
+    };
+
+    // Recent registrations don't need historical comparison, just the current list
+    stats.recentRegistrations = db.prepare('SELECT r.registered_at, c.name AS client_name, w.title AS workshop_title, w.type AS workshop_type, p.status AS payment_status FROM registrations r JOIN clients c ON r.client_id = c.id JOIN workshops w ON r.workshop_id = w.id LEFT JOIN payments p ON p.registration_id = r.id ORDER BY r.registered_at DESC LIMIT 10').all();
+
+    res.json(stats);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

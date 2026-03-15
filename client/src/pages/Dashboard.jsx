@@ -1,30 +1,106 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { apiFetch, badge, typeBadge, fmtMoney } from '../utils';
 
 export default function Dashboard({ setPage }) {
   const [stats, setStats] = useState(null);
-  
-  // Use React best practices: single mount fetch for dashboard
+  const [rangeType, setRangeType] = useState('all');
+  const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
+  // Use React best practices: fetch on mount and on range changes
   useEffect(() => { 
-    apiFetch('/payments/stats/summary').then(r => r.json()).then(setStats); 
-  }, []);
+    let url = '/payments/stats/summary';
+    let start, end;
+    const now = new Date();
+    
+    if (rangeType === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    } else if (rangeType === '3months') {
+      start = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0];
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    } else if (rangeType === 'year') {
+      start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+      end = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+    } else if (rangeType === 'custom' && customRange.start && customRange.end) {
+      start = customRange.start;
+      end = customRange.end;
+    }
+
+    if (start && end) url += `?start=${start}&end=${end}`;
+    else if (rangeType === 'custom') return; // wait for both dates
+
+    setStats(null); // trigger loading state
+    apiFetch(url).then(r => r.json()).then(setStats); 
+  }, [rangeType, customRange]);
   
+  const TrendBadge = ({ change }) => {
+    if (change === null || change === undefined) return null;
+    const isPositive = change > 0;
+    const isZero = change === 0;
+    
+    if (isZero) return <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded ml-2">--</span>;
+
+    return (
+      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ml-2 ${isPositive ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'}`}>
+        {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+        {Math.abs(change)}%
+      </span>
+    );
+  };
+
   if (!stats) return <div className="p-10 text-slate-400 animate-pulse">Loading dashboard...</div>;
   
   const cards = [
-    { label: 'Total Clients', value: stats.totalClients, color: 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 ring-blue-500/20', icon: '👥' },
-    { label: 'Total Workshops', value: stats.totalWorkshops, color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-700 ring-purple-500/20', icon: '🗓️' },
-    { label: 'Upcoming', value: stats.upcomingWorkshops, color: 'bg-gradient-to-br from-teal-50 to-teal-100 text-teal-700 ring-teal-500/20', icon: '⏳' },
-    { label: 'Total Revenue', value: fmtMoney(stats.totalRevenue), color: 'bg-gradient-to-br from-green-50 to-green-100 text-green-700 ring-green-500/20', icon: '💰' },
-    { label: 'Pending Payments', value: stats.pendingPayments, color: 'bg-gradient-to-br from-yellow-50 to-yellow-100 text-yellow-700 ring-yellow-500/20', icon: '⚠️' },
+    { label: 'Total Clients', value: stats.totalClients?.value ?? stats.totalClients, change: stats.totalClients?.change, color: 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 ring-blue-500/20', icon: '👥' },
+    { label: 'Total Workshops', value: stats.totalWorkshops?.value ?? stats.totalWorkshops, change: stats.totalWorkshops?.change, color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-700 ring-purple-500/20', icon: '🗓️' },
+    { label: 'Upcoming', value: stats.upcomingWorkshops?.value ?? stats.upcomingWorkshops, change: stats.upcomingWorkshops?.change, color: 'bg-gradient-to-br from-teal-50 to-teal-100 text-teal-700 ring-teal-500/20', icon: '⏳' },
+    { label: 'Total Revenue', value: fmtMoney(stats.totalRevenue?.value ?? stats.totalRevenue), change: stats.totalRevenue?.change, color: 'bg-gradient-to-br from-green-50 to-green-100 text-green-700 ring-green-500/20', icon: '💰' },
+    { label: 'Pending Payments', value: stats.pendingPayments?.value ?? stats.pendingPayments, change: stats.pendingPayments?.change, color: 'bg-gradient-to-br from-yellow-50 to-yellow-100 text-yellow-700 ring-yellow-500/20', icon: '⚠️' },
   ];
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <header className="mb-10">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Dashboard</h1>
-        <p className="text-slate-500 text-base">Welcome back! Here's a quick overview of your studio.</p>
+      <header className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Dashboard</h1>
+          <p className="text-slate-500 text-base">Welcome back! Here's a quick overview of your studio.</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 bg-white/60 p-2 rounded-2xl ring-1 ring-slate-200 backdrop-blur-md shadow-sm">
+          <div className="flex items-center gap-2 px-3">
+            <Calendar size={18} className="text-slate-400" />
+            <select 
+              value={rangeType} 
+              onChange={e => setRangeType(e.target.value)}
+              className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="all">All Time</option>
+              <option value="month">This Month</option>
+              <option value="3months">Last 3 Months</option>
+              <option value="year">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          
+          {rangeType === 'custom' && (
+            <div className="flex items-center gap-2 animate-in slide-in-from-right-4 border-l border-slate-200 pl-3">
+              <input 
+                type="date" 
+                value={customRange.start} 
+                onChange={e => setCustomRange(p => ({ ...p, start: e.target.value }))}
+                className="text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg ring-1 ring-slate-200 focus:outline-none focus:ring-blue-500 transition-colors"
+              />
+              <span className="text-slate-400 text-xs font-bold">to</span>
+              <input 
+                type="date" 
+                value={customRange.end} 
+                onChange={e => setCustomRange(p => ({ ...p, end: e.target.value }))}
+                className="text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg ring-1 ring-slate-200 focus:outline-none focus:ring-blue-500 transition-colors"
+              />
+            </div>
+          )}
+        </div>
       </header>
       
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-12">
@@ -35,7 +111,10 @@ export default function Dashboard({ setPage }) {
             style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
           >
             <span className="text-3xl mb-1">{c.icon}</span>
-            <span className="text-3xl font-black tracking-tight">{c.value}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight">{c.value}</span>
+              <TrendBadge change={c.change} />
+            </div>
             <span className="text-sm font-semibold opacity-80 uppercase tracking-wide">{c.label}</span>
           </div>
         ))}
