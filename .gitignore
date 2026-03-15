@@ -1,0 +1,11 @@
+node_modules/
+dist-app/
+client/dist/
+client/node_modules/
+.env
+workshop.sqlite
+workshop.sqlite-wal
+workshop.sqlite-shm
+*.log
+build_output.txt
+.DS_Store
