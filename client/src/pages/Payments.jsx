@@ -5,19 +5,19 @@ import { Modal } from '../components/Shared';
 export default function Payments() {
   const [payments, setPayments] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ status: '', amount: 0, notes: '' });
+  const [form, setForm] = useState({ status: '', amount: 0, amount_paid: 0, notes: '' });
 
   const load = () => apiFetch('/payments').then(r => r.json()).then(setPayments);
   
   useEffect(() => { load(); }, []);
 
-  const openEdit = (p) => { setForm({ status: p.status, amount: p.amount || 0, notes: p.notes || '' }); setEditing(p); };
+  const openEdit = (p) => { setForm({ status: p.status, amount: p.amount || 0, amount_paid: p.amount_paid || 0, notes: p.notes || '' }); setEditing(p); };
   
   const markPaid = async (p) => {
     await apiFetch(`/payments/${p.id}`, { 
       method: 'PUT', 
       headers: { 'Content-Type': 'text/plain' }, 
-      body: JSON.stringify({ status: 'paid', amount: p.amount, notes: p.notes }) 
+      body: JSON.stringify({ status: 'paid', amount: p.amount, amount_paid: p.amount, notes: p.notes }) 
     });
     load();
   };
@@ -67,6 +67,12 @@ export default function Payments() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-800 text-base">{fmtMoney(p.amount)}</div>
+                      {p.status === 'partial' && (
+                        <div className="text-[11px] font-bold text-slate-500 mt-1 flex flex-col gap-0.5">
+                          <span className="text-blue-600">Paid: {fmtMoney(p.amount_paid)}</span>
+                          <span className="text-orange-600">Left: {fmtMoney(p.amount - p.amount_paid)}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${badge[p.status] || badge.pending}`}>
@@ -128,6 +134,28 @@ export default function Payments() {
               />
               <p className="text-[11px] text-slate-400 font-medium mt-1.5 ml-1">Update this if a discount or late fee applies.</p>
             </div>
+
+            {form.status !== 'pending' && (
+              <div className="animate-in fade-in slide-up p-4 bg-blue-50/50 rounded-xl ring-1 ring-blue-100/50">
+                <label className="block text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">Amount Paid So Far (EGP)</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number" 
+                    min="0"
+                    step="10"
+                    value={form.status === 'paid' ? form.amount : form.amount_paid} 
+                    onChange={e => setForm({ ...form, amount_paid: Number(e.target.value) })} 
+                    disabled={form.status === 'paid'}
+                    className="w-full border-0 ring-1 ring-blue-200 bg-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all disabled:opacity-50" 
+                  />
+                  {form.status === 'partial' && form.amount > 0 && (
+                    <div className="shrink-0 text-sm font-bold text-slate-500">
+                      / {form.amount}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Notes / Method</label>

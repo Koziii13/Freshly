@@ -24,11 +24,11 @@ router.get('/stats/summary', (req, res) => {
 
 router.put('/:id', (req, res) => {
   try {
-    const { status, amount, notes } = req.body;
+    const { status, amount, amount_paid, notes } = req.body;
     const paid_at = status === 'paid' ? new Date().toISOString() : null;
-    db.prepare('UPDATE payments SET status=?, amount=?, notes=?, paid_at=? WHERE id=?').run(status, amount, notes||null, paid_at, req.params.id);
+    db.prepare('UPDATE payments SET status=?, amount=?, amount_paid=?, notes=?, paid_at=? WHERE id=?').run(status, amount, amount_paid || 0, notes||null, paid_at, req.params.id);
     const updated = db.prepare('SELECT p.*, c.name AS client_name, w.title AS workshop_title, w.date AS workshop_date FROM payments p JOIN registrations r ON p.registration_id = r.id JOIN clients c ON r.client_id = c.id JOIN workshops w ON r.workshop_id = w.id WHERE p.id=?').get(req.params.id);
-    sendWebhook('payment', { action: 'updated', client_name: updated.client_name, workshop_title: updated.workshop_title, workshop_date: updated.workshop_date, amount: updated.amount, status: updated.status, paid_at: updated.paid_at||'' });
+    sendWebhook('payment', { action: 'updated', client_name: updated.client_name, workshop_title: updated.workshop_title, workshop_date: updated.workshop_date, amount: updated.amount, amount_paid: updated.amount_paid, status: updated.status, paid_at: updated.paid_at||'' });
     res.json(updated);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

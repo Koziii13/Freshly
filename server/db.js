@@ -54,10 +54,18 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     registration_id INTEGER NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
     amount REAL DEFAULT 0,
+    amount_paid REAL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'pending',
     paid_at TEXT,
     notes TEXT
   );
+
+  -- Safe migration: If the table already exists but without amount_paid, add it.
+  -- better-sqlite3 will silently ignore the error if the column already exists
+  -- because we catch it or we could just try to add it and catch the error.
+  -- Actually, SQLite ALTER TABLE ADD COLUMN doesn't support IF NOT EXISTS natively in older versions.
+  -- We'll try to add it and catch the error in JS if it fails.
+
 
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -68,3 +76,13 @@ db.exec(`
 `);
 
 module.exports = db;
+
+// Run migration separately to handle potential "duplicate column" errors gracefully
+try {
+  db.exec('ALTER TABLE payments ADD COLUMN amount_paid REAL DEFAULT 0;');
+} catch (err) {
+  // If the error contains 'duplicate column name', the migration is already applied. Otherwise, log it.
+  if (!err.message.includes('duplicate column')) {
+    console.error("Migration error:", err.message);
+  }
+}
