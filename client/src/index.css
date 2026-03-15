@@ -2,7 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #f1f5f9;
+@layer base {
+  body {
+    @apply antialiased text-slate-800 bg-slate-50/50 selection:bg-blue-100 selection:text-blue-900;
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: animate-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .fade-in {
+    animation-name: fadeIn;
+  }
+  .slide-up {
+    animation-name: slideUp;
+  }
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/50 shadow-sm;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Custom scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300;
 }

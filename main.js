@@ -1,9 +1,19 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, session } = require('electron');
 const path = require('path');
 
 let mainWindow;
 
 function createWindow() {
+  // Set up Content Security Policy (CSP) for maximum offline security
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' http://localhost:3001; script-src 'self' 'unsafe-inline' http://localhost:3001; style-src 'self' 'unsafe-inline' http://localhost:3001; img-src 'self' data: http://localhost:3001; connect-src 'self' http://localhost:3001; font-src 'self' http://localhost:3001 data:"]
+      }
+    });
+  });
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -13,6 +23,21 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true, // Crucial for security
+      disableBlinkFeatures: 'Auxclick' // Prevent middle-click vulnerabilities
+    }
+  });
+
+  // Security: Block any external popup windows
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
+  });
+
+  // Security: Prevent navigation away from the local app
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith('http://localhost:3001')) {
+      e.preventDefault();
+      console.log('Blocked unauthorized navigation to:', url);
     }
   });
 
