@@ -26,24 +26,24 @@ export default function Settings() {
   const testConnection = async () => {
     if (!url) return setTestResult({ error: true, msg: 'Please enter and save a Webhook URL first.' });
     
-    setTestResult({ loading: true, msg: 'Sending test ping...' });
+    setTestResult({ loading: true, msg: 'Sending test ping via server...' });
     
     try {
-      await fetch(url, {
+      const resp = await apiFetch('/settings/test-webhook', {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          date: new Date().toISOString().split('T')[0],
-          client_name: 'Test Setup Request',
-          client_phone: '01012345678',
-          workshop_title: 'Connection Verification',
-          workshop_date: '2026-04-01',
-          price: 500
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
       });
-      setTestResult({ error: false, msg: 'Success! Look for a new row in your Google Sheet.' });
+      
+      const data = await resp.json();
+      
+      if (data.success) {
+        setTestResult({ error: false, msg: 'Success! Look for a new row in your Google Sheet (LOGS or TEST tab).' });
+      } else {
+        setTestResult({ error: true, msg: `Failed. Server says: ${data.msg || 'Invalid URL'}` });
+      }
     } catch (err) {
-      setTestResult({ error: true, msg: 'Failed. It seems the Webhook URL is invalid or the App Script is not publicly deployed.' });
+      setTestResult({ error: true, msg: 'Failed to connect to the local server to run the test.' });
     }
   };
 
