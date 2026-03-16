@@ -92,8 +92,25 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const { error } = await db.from('workshops').delete().eq('id', req.params.id);
+    const workshopId = req.params.id;
+
+    // Step 1: find all registrations for this workshop
+    const { data: regs } = await db.from('registrations').select('id').eq('workshop_id', workshopId);
+    
+    if (regs && regs.length > 0) {
+      const regIds = regs.map(r => r.id);
+      
+      // Step 2: delete associated payments first
+      await db.from('payments').delete().in('registration_id', regIds);
+      
+      // Step 3: delete registrations
+      await db.from('registrations').delete().eq('workshop_id', workshopId);
+    }
+
+    // Step 4: now safely delete the workshop
+    const { error } = await db.from('workshops').delete().eq('id', workshopId);
     if (error) throw error;
+    
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
